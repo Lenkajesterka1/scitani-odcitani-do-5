@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>Sčítání a odčítání do 5</title>
+  <style>
+    @media print {
+      body {
+        margin: 0;
+        box-shadow: none;
+      }
+    }
+    body {
+      font-family: "Comic Sans MS", cursive, sans-serif;
+      width: 21cm;
+      height: 29.7cm;
+      margin: 1cm auto;
+      padding: 1cm;
+      box-sizing: border-box;
+      border: 6px double #ba68c8;
+      background-color: #f3e5f5;
+    }
+    h1 {
+      text-align: center;
+      color: #6a1b9a;
+      font-size: 2.2em;
+    }
+    .example {
+      margin: 30px 0;
+      font-size: 1.6em;
+      padding: 15px;
+      background-color: #ffffff;
+      border: 2px dashed #ce93d8;
+      border-radius: 10px;
+    }
+    input[type="number"] {
+      width: 60px;
+      font-size: 1.2em;
+      margin-left: 10px;
+      border: 2px solid #ba68c8;
+      border-radius: 5px;
+      padding: 4px;
+    }
+    .incorrect {
+      background-color: #ffd6d6;
+    }
+    .feedback {
+      display: none;
+      margin-top: 30px;
+      padding: 15px;
+      background-color: #d0f5c8;
+      border-left: 5px solid #4caf50;
+      font-size: 1.3em;
+      border-radius: 5px;
+    }
+    .button-group {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .check-button, .reset-button, .generate-button {
+      display: inline-block;
+      margin: 8px;
+      padding: 12px 25px;
+      font-size: 1em;
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+    }
+    .check-button { background-color: #4caf50; color: white; }
+    .reset-button { background-color: #2196f3; color: white; }
+    .generate-button { background-color: #ff9800; color: white; }
+    .correction {
+      font-size: 0.9em;
+      color: #d32f2f;
+      margin-left: 10px;
+    }
+    .dots {
+      margin: 10px 0;
+      line-height: 30px;
+    }
+    .group {
+      display: inline-block;
+      margin-right: 15px;
+    }
+    .dot {
+      display: inline-block;
+      width: 28px;
+      height: 28px;
+      margin: 3px;
+      border-radius: 50%;
+    }
+    .first { background-color: #64b5f6; }
+    .second { background-color: #ffb74d; }
+    .crossed {
+      position: relative;
+    }
+    .crossed::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background-color: black;
+      transform: rotate(-45deg);
+    }
+  </style>
+</head>
+<body>
+  <h1>🌸 Sčítání a odčítání do 5</h1>
+
+  <div class="button-group">
+    <button class="generate-button" onclick="generateExamples()">🔄 Nové příklady</button>
+  </div>
+
+  <div id="exercises"></div>
+
+  <div class="button-group">
+    <button class="check-button" onclick="checkAnswers()">✅ Zkontroluj odpovědi</button>
+    <button class="reset-button" onclick="resetAnswers()">🔁 Zkus to znovu</button>
+  </div>
+
+  <div class="feedback" id="feedback"></div>
+
+  <script>
+    let tasks = [];
+
+    function generateExamples() {
+      tasks = [];
+      const container = document.getElementById("exercises");
+      container.innerHTML = "";
+      const usedExamples = new Set();
+      const operations = ['+', '-'];
+
+      while (tasks.length < 5) {
+        const op = operations[Math.floor(Math.random() * operations.length)];
+        let a = Math.floor(Math.random() * 6);
+        let b = Math.floor(Math.random() * 6);
+        if (op === '+' && a + b > 5) continue;
+        if (op === '-' && a < b) continue;
+
+        const key = `${a}${op}${b}`;
+        if (usedExamples.has(key)) continue;
+        usedExamples.add(key);
+
+        const result = op === '+' ? a + b : a - b;
+        tasks.push({ a, b, op, result });
+      }
+
+      tasks.forEach((task, i) => {
+        const div = document.createElement("div");
+        div.className = "example";
+
+        const dotRow = document.createElement("div");
+        dotRow.className = "dots";
+
+        if (task.op === '+') {
+          const groupA = document.createElement("div");
+          groupA.className = "group";
+          for (let j = 0; j < task.a; j++) {
+            const dot = document.createElement("span");
+            dot.className = `dot first`;
+            groupA.appendChild(dot);
+          }
+
+          const groupB = document.createElement("div");
+          groupB.className = "group";
+          for (let j = 0; j < task.b; j++) {
+            const dot = document.createElement("span");
+            dot.className = `dot second`;
+            groupB.appendChild(dot);
+          }
+
+          dotRow.appendChild(groupA);
+          dotRow.appendChild(groupB);
+        } else {
+          for (let j = 0; j < task.a; j++) {
+            const dot = document.createElement("span");
+            dot.className = `dot first`;
+            if (j >= task.a - task.b) dot.classList.add("crossed");
+            dotRow.appendChild(dot);
+          }
+        }
+
+        div.appendChild(dotRow);
+        div.innerHTML += `${task.a} ${task.op} ${task.b} = <input type="number" id="ex${i}" />`;
+        container.appendChild(div);
+      });
+
+      document.getElementById("feedback").style.display = "none";
+      document.getElementById("feedback").innerHTML = "";
+    }
+
+    function checkAnswers() {
+      let correct = 0;
+      const feedback = document.getElementById("feedback");
+      feedback.innerHTML = "";
+
+      tasks.forEach((task, i) => {
+        const input = document.getElementById("ex" + i);
+        const userAnswer = parseInt(input.value);
+        const parent = input.parentElement;
+
+        input.classList.remove("incorrect");
+        const oldCorrection = parent.querySelector(".correction");
+        if (oldCorrection) oldCorrection.remove();
+
+        if (userAnswer === task.result) {
+          correct++;
+        } else {
+          input.classList.add("incorrect");
+          const correction = document.createElement("span");
+          correction.classList.add("correction");
+          correction.textContent = `Správně: ${task.result}`;
+          parent.appendChild(correction);
+        }
+      });
+
+      feedback.style.display = "block";
+      if (correct === tasks.length) {
+        feedback.innerHTML = "🎉 Skvělé! Máš vše správně! 😊";
+      } else if (correct >= 4) {
+        feedback.innerHTML = "👍 Výborně! Máš většinu dobře!";
+      } else if (correct >= 2) {
+        feedback.innerHTML = "🙂 Dobrá práce! Zkus to ještě vylepšit!";
+      } else {
+        feedback.innerHTML = "💪 Nevadí, příště to zvládneš lépe. Zkus to znovu!";
+      }
+    }
+
+    function resetAnswers() {
+      tasks.forEach((_, i) => {
+        const input = document.getElementById("ex" + i);
+        input.value = "";
+        input.classList.remove("incorrect");
+
+        const parent = input.parentElement;
+        const oldCorrection = parent.querySelector(".correction");
+        if (oldCorrection) oldCorrection.remove();
+      });
+
+      const feedback = document.getElementById("feedback");
+      feedback.style.display = "none";
+      feedback.innerHTML = "";
+    }
+
+    window.onload = generateExamples;
+  </script>
+</body>
+</html>
